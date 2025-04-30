@@ -1,0 +1,62 @@
+{
+    "especialidades": [
+        {
+            "nombre": "Traumatología",
+            "consultorio": "Consultorio 1"
+        },
+        {
+            "nombre": "Internista",
+            "consultorio": "Consultorio 2"
+        },
+        {
+            "nombre": "Cirugía",
+            "consultorio": "Consultorio 3"
+        },
+        {
+            "nombre": "Pediatría",
+            "consultorio": "Consultorio 4"
+        },
+        {
+            "nombre": "Ginecología",
+            "consultorio": "Consultorio 5"
+        },
+        {
+            "nombre": "Neurología",
+            "consultorio": "Consultorio 6"
+        },
+        {
+            "nombre": "Urólogo",
+            "consultorio": "Consultorio 7"
+        },
+        {
+            "nombre": "Cardiología",
+            "consultorio": "Consultorio 8"
+        },
+        {
+            "nombre": "Radiología",
+            "consultorio": "Consultorio 9"
+        },
+        {
+            "nombre": "Medicina",
+            "consultorio": "Consultorio 10"
+        },
+        {
+            "nombre": "Obstetricia 1",
+            "consultorio": "Consultorio 11"
+        },
+        {
+            "nombre": "Obstetricia 2",
+            "consultorio": "Consultorio 12"
+        },
+        {
+            "nombre": "Psicología",
+            "consultorio": "Consultorio 13"
+        },
+        {
+            "nombre": "Dental",
+            "consultorio": "Consultorio 14"
+        }
+    ],
+    "pacientes": [],
+    "ultimo_llamado": null
+}

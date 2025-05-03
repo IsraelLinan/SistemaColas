@@ -24,7 +24,7 @@ class SalaEspera:
         pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
 
         # Datos
-        self.archivo = 'datos_hospital.json'
+        self.archivo =  'datos_hospital.json' #r'\\192.168.10.220\cita_medicas_hap\datos_hospital.json'
         self.datos = self._cargar_datos()
         self.ultimo_llamado = None
         self.logo = None

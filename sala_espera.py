@@ -8,6 +8,10 @@ from datetime import datetime
 from gtts import gTTS
 import winsound
 from PIL import Image, ImageTk
+import threading  # Importar threading para el Lock
+
+# Crear un objeto Lock global
+file_lock = threading.Lock()
 
 # Configuración de tamaños
 WINDOW_WIDTH = 1200
@@ -24,7 +28,7 @@ class SalaEspera:
         pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
 
         # Datos
-        self.archivo =  'datos_hospital.json' #r'\\192.168.10.220\cita_medicas_hap\datos_hospital.json'
+        self.archivo =  'datos_hospital.json'
         self.datos = self._cargar_datos()
         self.ultimo_llamado = None
         self.logo = None
@@ -51,17 +55,18 @@ class SalaEspera:
         self._verificar_cambios()
 
     def _cargar_datos(self):
-        base = {'especialidades': [], 'pacientes': [], 'ultimo_llamado': None}
-        if os.path.exists(self.archivo):
-            try:
-                with open(self.archivo, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except:
+        with file_lock:  # Bloquear acceso al archivo
+            base = {'especialidades': [], 'pacientes': [], 'ultimo_llamado': None}
+            if os.path.exists(self.archivo):
+                try:
+                    with open(self.archivo, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+                except:
+                    return base
+            else:
+                with open(self.archivo, 'w', encoding='utf-8') as f:
+                    json.dump(base, f, indent=4)
                 return base
-        else:
-            with open(self.archivo, 'w', encoding='utf-8') as f:
-                json.dump(base, f, indent=4)
-            return base
 
     def _setup_ui(self):
         # Columna Izquierda
@@ -194,6 +199,7 @@ class SalaEspera:
 if __name__ == "__main__":
     app = SalaEspera()
     app.run()
+
 
 
 

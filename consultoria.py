@@ -3,11 +3,14 @@ from tkinter import simpledialog, messagebox
 import json
 import os
 import time
-import threading
+import threading  # Importar threading para el Lock
 from datetime import datetime
 import keyboard
 from PIL import Image, ImageTk
 import sys
+
+# Crear un objeto Lock global
+file_lock = threading.Lock()
 
 class ModuloConsultorio:
     def __init__(self, consultorio_id):
@@ -16,7 +19,7 @@ class ModuloConsultorio:
                 raise ValueError("Número de consultorio inválido (debe ser 1-14)")
 
             self.consultorio_id = consultorio_id
-            self.archivo_datos = 'datos_hospital.json' #r'\\192.168.10.220\cita_medicas_hap\datos_hospital.json'
+            self.archivo_datos = 'datos_hospital.json'
             self.paciente_actual = None
             self.logo = None
             
@@ -40,46 +43,48 @@ class ModuloConsultorio:
             self.root.after(3000, self.refresh_data)
 
     def cargar_datos(self):
-        datos_base = {
-            'especialidades': [
-                {'nombre': 'Traumatología', 'consultorio': 'Consultorio 1'},
-                {'nombre': 'Internista', 'consultorio': 'Consultorio 2'},
-                {'nombre': 'Cirugía', 'consultorio': 'Consultorio 3'},
-                {'nombre': 'Pediatría', 'consultorio': 'Consultorio 4'},
-                {'nombre': 'Ginecología', 'consultorio': 'Consultorio 5'},
-                {'nombre': 'Neurología', 'consultorio': 'Consultorio 6'},
-                {'nombre': 'Urólogo', 'consultorio': 'Consultorio 7'},
-                {'nombre': 'Cardiología', 'consultorio': 'Consultorio 8'},
-                {'nombre': 'Radiología', 'consultorio': 'Consultorio 9'},
-                {'nombre': 'Medicina', 'consultorio': 'Consultorio 10'},
-                {'nombre': 'Obstetricia 1', 'consultorio': 'Consultorio 11'},
-                {'nombre': 'Obstetricia 2', 'consultorio': 'Consultorio 12'},
-                {'nombre': 'Psicología', 'consultorio': 'Consultorio 13'},
-                {'nombre': 'Dental', 'consultorio': 'Consultorio 14'}
-            ],
-            'pacientes': [],
-            'ultimo_llamado': None
-        }
+        with file_lock:  # Bloquear acceso al archivo
+            datos_base = {
+                'especialidades': [
+                    {'nombre': 'Traumatología', 'consultorio': 'Consultorio 1'},
+                    {'nombre': 'Internista', 'consultorio': 'Consultorio 2'},
+                    {'nombre': 'Cirugía', 'consultorio': 'Consultorio 3'},
+                    {'nombre': 'Pediatría', 'consultorio': 'Consultorio 4'},
+                    {'nombre': 'Ginecología', 'consultorio': 'Consultorio 5'},
+                    {'nombre': 'Neurología', 'consultorio': 'Consultorio 6'},
+                    {'nombre': 'Urólogo', 'consultorio': 'Consultorio 7'},
+                    {'nombre': 'Cardiología', 'consultorio': 'Consultorio 8'},
+                    {'nombre': 'Radiología', 'consultorio': 'Consultorio 9'},
+                    {'nombre': 'Medicina', 'consultorio': 'Consultorio 10'},
+                    {'nombre': 'Obstetricia 1', 'consultorio': 'Consultorio 11'},
+                    {'nombre': 'Obstetricia 2', 'consultorio': 'Consultorio 12'},
+                    {'nombre': 'Psicología', 'consultorio': 'Consultorio 13'},
+                    {'nombre': 'Dental', 'consultorio': 'Consultorio 14'}
+                ],
+                'pacientes': [],
+                'ultimo_llamado': None
+            }
         
-        if os.path.exists(self.archivo_datos):
-            try:
-                with open(self.archivo_datos, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except:
+            if os.path.exists(self.archivo_datos):
+                try:
+                    with open(self.archivo_datos, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+                except:
+                    return datos_base
+            else:
+                with open(self.archivo_datos, 'w', encoding='utf-8') as f:
+                    json.dump(datos_base, f, indent=4)
                 return datos_base
-        else:
-            with open(self.archivo_datos, 'w', encoding='utf-8') as f:
-                json.dump(datos_base, f, indent=4)
-            return datos_base
 
     def guardar_datos(self):
-        try:
-            with open(self.archivo_datos, 'w', encoding='utf-8') as f:
-                json.dump(self.datos, f, indent=4, ensure_ascii=False)
-            return True
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudieron guardar los datos: {e}")
-            return False
+        with file_lock:  # Bloquear acceso al archivo
+            try:
+                with open(self.archivo_datos, 'w', encoding='utf-8') as f:
+                    json.dump(self.datos, f, indent=4, ensure_ascii=False)
+                return True
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudieron guardar los datos: {e}")
+                return False
 
     def setup_ui(self):
         self.root = tk.Tk()
@@ -144,20 +149,17 @@ class ModuloConsultorio:
         scroll_hist = tk.Scrollbar(hf, orient="vertical", command=self.hist_listbox.yview)
         scroll_hist.pack(side=tk.RIGHT, fill=tk.Y)
         self.hist_listbox.config(yscrollcommand=scroll_hist.set)
-        
+
     def cargar_logo(self, logo_frame):
-    
         try:
             # Usamos la ruta correcta dependiendo de si es un ejecutable o no
             if getattr(sys, 'frozen', False):
-               # Si el archivo es un ejecutable, la ruta será relativa al ejecutable
                logo_path = os.path.join(sys._MEIPASS, 'logo_hospital.png')
             else:
-               # Si estamos en desarrollo, usamos la ruta relativa al script
                logo_path = 'logo_hospital.png'
         
             image = Image.open(logo_path)
-            image = image.resize((200, 200), Image.LANCZOS)  # Tamaño ajustado del logo
+            image = image.resize((200, 200), Image.LANCZOS)
             self.logo = ImageTk.PhotoImage(image)
             logo_label = tk.Label(logo_frame, image=self.logo, bg='#f0f0f0')
             logo_label.pack(side=tk.LEFT, padx=10)
@@ -166,7 +168,7 @@ class ModuloConsultorio:
             tk.Label(logo_frame, 
                  text="HOSPITAL DE APOYO PALPA",
                  font=('Arial', 14),
-                 bg='#f0f0f0').pack(side=tk.LEFT, padx=10)      
+                 bg='#f0f0f0').pack(side=tk.LEFT, padx=10)
 
     def setup_hotkeys(self):
         keyboard.add_hotkey('F2', self.llamar_siguiente)
@@ -184,11 +186,13 @@ class ModuloConsultorio:
             return []
             
         hoy = datetime.now().strftime("%Y-%m-%d")
-        lst = [p for p in self.datos['pacientes']
-               if not p.get('atendido', False)
-               and p['consultorio'] == f"Consultorio {self.consultorio_id}"
-               and p['fecha_registro'].startswith(hoy)]
-        lst.sort(key=lambda x: x['fecha_registro'])
+        pacientes = self.datos['pacientes'].get(f"Consultorio {self.consultorio_id}", [])
+        lst = [p for p in pacientes if not p.get('atendido', False) and p['fecha_registro'].startswith(hoy)]
+        #lst = [p for p in self.datos['pacientes']
+               #if not p.get('atendido', False) #pacientes no atendidos
+               #and p['consultorio'] == f"Consultorio {self.consultorio_id}" #consultorio actual
+               #and p['fecha_registro'].startswith(hoy)] #pacientes registrados hoy
+        lst.sort(key=lambda x: x['fecha_registro']) #ordena los pacientes por la fecha de registro
         return lst
 
     def obtener_historial_atencion(self):
@@ -197,25 +201,30 @@ class ModuloConsultorio:
             return []
             
         hoy = datetime.now().strftime("%Y-%m-%d")
-        lst = [p for p in self.datos['pacientes']
-              if p.get('atendido', False)
-              and p['especialidad'] == esp
-              and p['fecha_registro'].startswith(hoy)]
+        pacientes = self.datos['pacientes'].get(f"Consultorio {self.consultorio_id}", [])
+        # Filtra los pacientes que han sido atendidos y que están en la especialidad y consultorio correctos
+        lst = [p for p in pacientes if p.get('atendido', False) and p['fecha_registro'].startswith(hoy)]
+        #lst = [p for p in self.datos['pacientes']
+              #if p.get('atendido', False) #pacientes atendidos
+              #and p['especialidad'] == esp #filtra por especialidad
+              #and p['consultorio'] == f"Consultorio {self.consultorio_id}"  # Consultorio actual
+              #and p['fecha_registro'].startswith(hoy)] #pacientes registrados hoy
+        # Ordena los pacientes por la fecha de registro (descendente para ver los más recientes)
         lst.sort(key=lambda x: x['fecha_registro'], reverse=True)
         return lst[:20]
 
     def actualizar_listas(self):
         self.wait_listbox.delete(0, tk.END)
         self.hist_listbox.delete(0, tk.END)
-
+        # Actualiza la lista de pacientes en espera
         espera = self.obtener_pacientes_espera()
         if espera:
             for p in espera:
-                h = p['fecha_registro'].split(' ')[1][:5]
+                h = p['fecha_registro'].split(' ')[1][:5]  #solo muestra la hora
                 self.wait_listbox.insert(tk.END, f"{p['id']}. {p['nombre']} ({h})")
         else:
             self.wait_listbox.insert(tk.END, "Sin pacientes en espera")
-
+        # Actualiza el historial de pacientes atendidos
         hist = self.obtener_historial_atencion()
         if hist:
             for p in hist:
@@ -230,9 +239,9 @@ class ModuloConsultorio:
         if not espera:
             messagebox.showinfo("Info", "No hay pacientes en espera")
             return
-            
+           
         p = espera[0]
-        for d in self.datos['pacientes']:
+        for d in self.datos['pacientes'].get(f"Consultorio {self.consultorio_id}", []):
             if d['id'] == p['id']:
                 d['atendido'] = True
                 d['fecha_atencion'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -242,7 +251,7 @@ class ModuloConsultorio:
             self.paciente_actual = p
             self.status_label.config(text="OCUPADO", fg='red')
             self.paciente_label.config(text=f"Paciente: {p['nombre']} (Turno {p['id']})")
-            self.actualizar_listas()
+            self.actualizar_listas() # Actualiza las listas después de llamar al paciente
             messagebox.showinfo("Paciente Llamado", f"Paciente {p['nombre']} está siendo atendido")
 
     def re_llamar_paciente(self):

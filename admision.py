@@ -6,50 +6,69 @@ from datetime import datetime
 import csv
 from PIL import Image, ImageTk
 import sys
+import threading  # Importar threading para el Lock
 
-
+# Crear un objeto Lock global
+file_lock = threading.Lock()
 
 class ModuloAdmision:
     def __init__(self):
-        self.archivo_datos = 'datos_hospital.json' #r'\\192.168.10.220\cita_medicas_hap\datos_hospital.json'
+        self.archivo_datos = 'datos_hospital.json'
         self.datos = self.cargar_datos()
         self.logo = None
         self.setup_ui()
 
     def cargar_datos(self):
-        datos_base = {
-            'especialidades': [
-                {'nombre': 'Traumatología', 'consultorio': 'Consultorio 1'},
-                {'nombre': 'Internista', 'consultorio': 'Consultorio 2'},
-                {'nombre': 'Cirugía', 'consultorio': 'Consultorio 3'},
-                {'nombre': 'Pediatría', 'consultorio': 'Consultorio 4'},
-                {'nombre': 'Ginecología', 'consultorio': 'Consultorio 5'},
-                {'nombre': 'Neurología', 'consultorio': 'Consultorio 6'},
-                {'nombre': 'Urólogo', 'consultorio': 'Consultorio 7'},
-                {'nombre': 'Cardiología', 'consultorio': 'Consultorio 8'},
-                {'nombre': 'Radiología', 'consultorio': 'Consultorio 9'},
-                {'nombre': 'Medicina', 'consultorio': 'Consultorio 10'},
-                {'nombre': 'Obstetricia 1', 'consultorio': 'Consultorio 11'},
-                {'nombre': 'Obstetricia 2', 'consultorio': 'Consultorio 12'},
-                {'nombre': 'Psicología', 'consultorio': 'Consultorio 13'},
-                {'nombre': 'Dental', 'consultorio': 'Consultorio 14'}
-            ],
-            'pacientes': [],
-            'ultimo_llamado': None
-        }
+        with file_lock:  # Bloquear acceso al archivo
+            datos_base = {
+                'especialidades': [
+                    {'nombre': 'Traumatología', 'consultorio': 'Consultorio 1'},
+                    {'nombre': 'Internista', 'consultorio': 'Consultorio 2'},
+                    {'nombre': 'Cirugía', 'consultorio': 'Consultorio 3'},
+                    {'nombre': 'Pediatría', 'consultorio': 'Consultorio 4'},
+                    {'nombre': 'Ginecología', 'consultorio': 'Consultorio 5'},
+                    {'nombre': 'Neurología', 'consultorio': 'Consultorio 6'},
+                    {'nombre': 'Urólogo', 'consultorio': 'Consultorio 7'},
+                    {'nombre': 'Cardiología', 'consultorio': 'Consultorio 8'},
+                    {'nombre': 'Radiología', 'consultorio': 'Consultorio 9'},
+                    {'nombre': 'Medicina', 'consultorio': 'Consultorio 10'},
+                    {'nombre': 'Obstetricia 1', 'consultorio': 'Consultorio 11'},
+                    {'nombre': 'Obstetricia 2', 'consultorio': 'Consultorio 12'},
+                    {'nombre': 'Psicología', 'consultorio': 'Consultorio 13'},
+                    {'nombre': 'Dental', 'consultorio': 'Consultorio 14'}
+                ],
+                'pacientes': {
+                    "Consultorio 1" : [],
+                    "Consultorio 2" : [],
+                    "Consultorio 3" : [],
+                    "Consultorio 4" : [],
+                    "Consultorio 5" : [],
+                    "Consultorio 6" : [],
+                    "Consultorio 7" : [],
+                    "Consultorio 8" : [],
+                    "Consultorio 9" : [],
+                    "Consultorio 10" : [],
+                    "Consultorio 11" : [],
+                    "Consultorio 12" : [],
+                    "Consultorio 13" : [],
+                    "Consultorio 14" : [],
+                    
+                    },
+                'ultimo_llamado': None
+            }
 
-        try:
-            if os.path.exists(self.archivo_datos):
-                with open(self.archivo_datos, 'r', encoding='utf-8') as f:
-                    datos = json.load(f)
-                    self.validar_estructura_datos(datos, datos_base)
-                    return datos
-            else:
-                self.guardar_datos(datos_base)
+            try:
+                if os.path.exists(self.archivo_datos):
+                    with open(self.archivo_datos, 'r', encoding='utf-8') as f:
+                        datos = json.load(f)
+                        self.validar_estructura_datos(datos, datos_base)
+                        return datos
+                else:
+                    self.guardar_datos(datos_base)
+                    return datos_base
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo cargar los datos: {str(e)}")
                 return datos_base
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudo cargar los datos: {str(e)}")
-            return datos_base
 
     def validar_estructura_datos(self, datos, datos_base):
         """Valida que la estructura de los datos esté completa, de lo contrario, la ajusta."""
@@ -59,16 +78,17 @@ class ModuloAdmision:
         return datos
 
     def guardar_datos(self, datos=None):
-        """Guarda los datos en un archivo JSON de manera segura."""
-        if not datos:
-            datos = self.datos
-        try:
-            with open(self.archivo_datos, 'w', encoding='utf-8') as f:
-                json.dump(datos, f, indent=4, ensure_ascii=False)
-            return True
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudieron guardar los datos: {str(e)}")
-            return False
+        with file_lock:  # Bloquear acceso al archivo
+            """Guarda los datos en un archivo JSON de manera segura."""
+            if not datos:
+                datos = self.datos
+            try:
+                with open(self.archivo_datos, 'w', encoding='utf-8') as f:
+                    json.dump(datos, f, indent=4, ensure_ascii=False)
+                return True
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudieron guardar los datos: {str(e)}")
+                return False
 
     def setup_ui(self):
         self.root = tk.Tk()
@@ -290,7 +310,6 @@ class ModuloAdmision:
             messagebox.showerror("Error", f"No se pudo generar el ticket: {str(e)}", parent=ventana)
 
     def mostrar_reporte(self):
-       
         # Ventana emergente para el reporte
         reporte = tk.Toplevel(self.root)
         reporte.title("Reporte de Pacientes")
@@ -383,14 +402,14 @@ class ModuloAdmision:
            messagebox.showinfo("Éxito", f"Reporte exportado a:\n{filepath}", parent=self.root)
         except Exception as e:
            messagebox.showerror("Error", f"No se pudo exportar CSV:\n{e}", parent=self.root)
-
-
+           
     def run(self):
         self.root.mainloop()
 
 if __name__ == "__main__":
     app = ModuloAdmision()
     app.run()
+
 
 
 
